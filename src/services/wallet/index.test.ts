@@ -27,7 +27,7 @@ describe("Wallet", () => {
     it("fills a ask", () => {
       const amount = 1;
       const price = 300;
-      repo.findAllByExample = jest.fn().mockImplementation(() => [
+      repo.findAll = jest.fn().mockImplementation(() => [
         {
           type: OrderType.Ask,
           status: OrderStatus.Filled,
@@ -45,7 +45,7 @@ describe("Wallet", () => {
     it("fills a bid", () => {
       const amount = 1;
       const price = 300;
-      repo.findAllByExample = jest.fn().mockImplementation(() => [
+      repo.findAll = jest.fn().mockImplementation(() => [
         {
           type: OrderType.Bid,
           status: OrderStatus.Filled,
@@ -56,7 +56,43 @@ describe("Wallet", () => {
 
       const balance = subject.getBalance();
       //e.g. FILLED BID @ PRICE AMOUNT (ETH - x.xxx USD + yyyy)
-      expect(balance.ETH).toEqual(INITIAL_ETH_BALANCE - amount); //BUG!!!
+      expect(balance.ETH).toEqual(INITIAL_ETH_BALANCE - amount);
+      expect(balance.USD).toEqual(INITIAL_USD_BALANCE + amount * price);
+    });
+
+    it("closes a bid", () => {
+      const amount = 1;
+      const price = 300;
+      repo.findAll = jest.fn().mockImplementation(() => [
+        {
+          type: OrderType.Bid,
+          status: OrderStatus.Closed,
+          amount: amount,
+          price,
+        },
+      ]);
+
+      const balance = subject.getBalance();
+      //e.g. CLOSED BID @ PRICE AMOUNT (ETH + x.xxx USD - yyyy)
+      expect(balance.ETH).toEqual(INITIAL_ETH_BALANCE + amount);
+      expect(balance.USD).toEqual(INITIAL_USD_BALANCE - amount * price);
+    });
+
+    it("closes a ask", () => {
+      const amount = 1;
+      const price = 300;
+      repo.findAll = jest.fn().mockImplementation(() => [
+        {
+          type: OrderType.Ask,
+          status: OrderStatus.Closed,
+          amount: -amount,
+          price,
+        },
+      ]);
+
+      const balance = subject.getBalance();
+      //e.g. CLOSED ASK @ PRICE AMOUNT (ETH - x.xxx USD + yyyy)
+      expect(balance.ETH).toEqual(INITIAL_ETH_BALANCE - amount);
       expect(balance.USD).toEqual(INITIAL_USD_BALANCE + amount * price);
     });
   });
