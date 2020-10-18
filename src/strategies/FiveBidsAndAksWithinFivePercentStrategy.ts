@@ -1,6 +1,6 @@
 import { IStrategy, OrderBook } from "./types";
 import { randomAmount, randomPrice } from "../utils";
-import { IOrderRepo, OrderType } from "../services/orders";
+import { IOrder, IOrderRepo, OrderStatus, OrderType } from "../services/orders";
 import { INITIAL_ETH_BALANCE, IWallet } from "../services/wallet";
 
 const NUMBERS_OF_ORDERS = 5;
@@ -21,11 +21,14 @@ export class FiveBidsAndAksWithinFivePercentStrategy implements IStrategy {
     }
     const bestBid = bids[bids.length - 1]; // last element
     const [bestAsk] = asks; // fist element
+    this.cleanOrders(bestBid, bestAsk);
+
     const balance = this.wallet.getBalance();
     const requiredETH = AMOUNT * NUMBERS_OF_ORDERS * TOLERANCE;
     const requiredUSD = AMOUNT * bestAsk[1] * NUMBERS_OF_ORDERS * TOLERANCE;
     if (balance.ETH < requiredETH || balance.USD < requiredUSD) {
-      // TODO clean older orders
+      // not enough funds to execute the strategy
+      console.log("skip strategy because missing funds", { balance });
       return false;
     }
 
@@ -40,5 +43,36 @@ export class FiveBidsAndAksWithinFivePercentStrategy implements IStrategy {
       this.orderRepo.create(OrderType.Ask, askPrice, askAmount);
     });
     return true;
+  }
+
+  private cleanOrders(
+    bestBid: [number, number, number],
+    bestAsk: [number, number, number]
+  ) {
+    const bestBidPrice = bestBid[1];
+    const bestAskPrice = bestAsk[1];
+    const maxBidPrice = bestBidPrice - bestBidPrice * TOLERANCE;
+    console.log({ bestBidPrice, maxBidPrice });
+    const maxAskPrice = bestAskPrice + bestAskPrice * TOLERANCE;
+    console.log({ bestAskPrice, maxAskPrice });
+
+    // keep the nearest 5 bids
+    this.orderRepo
+      .findAllByExample({ type: OrderType.Bid, status: OrderStatus.Open })
+      .sort((a: IOrder, b: IOrder) => b.price - a.price)
+      .slice(4)
+      .forEach((o) => {
+        this.orderRepo.update(o.id, { status: OrderStatus.Closed });
+      });
+    //
+
+    // keep the nearest 5 asks
+    this.orderRepo
+      .findAllByExample({ type: OrderType.Ask, status: OrderStatus.Open })
+      .sort((a: IOrder, b: IOrder) => a.price - b.price)
+      .slice(4)
+      .forEach((o) => {
+        this.orderRepo.update(o.id, { status: OrderStatus.Closed });
+      });
   }
 }
