@@ -12,7 +12,7 @@ export enum OrderStatus {
 
 export interface IOrderRepo {
   create(type: OrderType, price: number, amount: number): string;
-  update(id: string, order: IOrder): boolean;
+  update(id: string, order: IOrder | Partial<IOrder>): boolean;
   find(id: string): IOrder | null;
   findAll(): IOrder[];
   findAllByExample(order: Partial<IOrder>): IOrder[];
@@ -20,6 +20,7 @@ export interface IOrderRepo {
 
 export interface IOrder {
   createdAt: string;
+  updatedAt: string;
   type: OrderType;
   price: number;
   amount: number;
@@ -45,6 +46,7 @@ export class OrderRepo implements IOrderRepo {
       price,
       amount,
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       status: OrderStatus.Open,
     };
 
@@ -60,22 +62,40 @@ export class OrderRepo implements IOrderRepo {
     return id;
   }
 
-  update(id: string, { type, amount, price, status, ...props }: IOrder) {
-    if (!type) throw new Error("Missing type");
+  update(id: string, order: IOrder | Partial<IOrder>) {
+    const oldOrder = this.find(id);
+    if (!oldOrder) return false;
+
+    const update: IOrder = {
+      ...oldOrder,
+      ...order,
+      updatedAt: new Date().toISOString(),
+      // immutable properties, probably we should allow only status changes
+      type: oldOrder.type,
+      createdAt: oldOrder.createdAt,
+      id: oldOrder.id,
+    };
+
+    this.data = {
+      ...this.data,
+      [oldOrder.type]: {
+        ...this.data[oldOrder.type],
+        [id]: update,
+      },
+    };
+
+    const { type, amount, price, status } = update;
+
     const assets =
       type === OrderType.Bid
         ? `(ETH - ${amount} USD + ${amount * price})`
         : `(ETH + ${-amount} USD - ${Math.abs(amount * price)})`;
 
-    console.log(`${status} ${type} @ ${price} ${amount} ${assets}`);
-
-    this.data = {
-      ...this.data,
-      [type]: {
-        ...this.data[type],
-        [id]: { type, amount, price, status, ...props },
-      },
-    };
+    console.log(
+      `${status} ${type} @ ${price} ${amount} ${
+        status === OrderStatus.Filled ? assets : ""
+      }`
+    );
 
     return true;
   }
@@ -87,7 +107,7 @@ export class OrderRepo implements IOrderRepo {
   }
 
   findAllByExample(example: Partial<IOrder>): IOrder[] {
-    const props = Object.keys(example)
+    const props = Object.keys(example);
     return this.findAll().filter((o) => {
       return props.every((eKey) => {
         return example[eKey] === o[eKey];

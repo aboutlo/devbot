@@ -1,4 +1,4 @@
-import {IOrderRepo, OrderRepo, OrderType} from "./index";
+import {IOrderRepo, OrderRepo, OrderStatus, OrderType} from "./index";
 
 describe("OrderRepo", () => {
   describe("constructor", () => {
@@ -52,25 +52,60 @@ describe("OrderRepo", () => {
       subject = new OrderRepo();
     });
 
-    it("finds some order by type", () => {
+    it("finds some orders by type", () => {
       const price = 100;
       const amount = 1;
       subject.create(OrderType.Bid, price, amount);
       subject.create(OrderType.Ask, price, amount);
-      const orders = subject.findAllByExample({type: OrderType.Bid});
-      expect(orders).toHaveLength(1)
+      const orders = subject.findAllByExample({ type: OrderType.Bid });
+      expect(orders).toHaveLength(1);
     });
 
-    it("finds some order by type and amount", () => {
+    it("finds some orders by type and amount", () => {
       const price = 100;
       const amount = 1;
       subject.create(OrderType.Bid, price, amount);
       subject.create(OrderType.Bid, price, 3);
       subject.create(OrderType.Ask, price, amount);
-      const orders = subject.findAllByExample({type: OrderType.Bid, amount});
-      expect(orders).toHaveLength(1)
+      const orders = subject.findAllByExample({ type: OrderType.Bid, amount });
+      expect(orders).toHaveLength(1);
     });
 
+    it("finds some orders by status", () => {
+      const price = 100;
+      const amount = 1;
+      subject.create(OrderType.Bid, price, amount);
+      subject.create(OrderType.Bid, price, 3);
+      const id = subject.create(OrderType.Ask, price, amount);
+      subject.update(id, {status: OrderStatus.Closed})
+      const orders = subject.findAllByExample({ status: OrderStatus.Closed });
+      expect(orders).toHaveLength(1);
+    });
+  });
+
+  describe("update", () => {
+    let subject: IOrderRepo;
+    beforeEach(() => {
+      subject = new OrderRepo();
+    });
+
+    it("updates an order status", () => {
+      const type = OrderType.Bid;
+      const price = 100;
+      const amount = 1;
+      const id = subject.create(type, price, amount);
+      const updated = subject.update(id, { status: OrderStatus.Closed });
+      expect(updated).toBeTruthy();
+      expect(subject.find(id)).toEqual(
+        expect.objectContaining({
+          type,
+          price,
+          amount,
+          id,
+          status: OrderStatus.Closed,
+        })
+      );
+    });
 
   });
 });
