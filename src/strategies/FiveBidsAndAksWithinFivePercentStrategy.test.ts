@@ -39,12 +39,14 @@ describe("FiveBidsAndAsksWithinFivePercent", () => {
         ETH: INITIAL_ETH_BALANCE,
         USD: INITIAL_USD_BALANCE,
       }));
+      orderRepo.findAllByExample = jest.fn().mockImplementation(() => [])
       const bid: [number, number, number] = [50000, 350, 1];
       const ask: [number, number, number] = [50000, 350, -1];
       const orderBook = {
         bids: [bid],
         asks: [ask],
       };
+
       const result = subject.execute(orderBook);
       expect(result).toBeTruthy();
       expect(orderRepo.create).toHaveBeenCalledTimes(10);
@@ -66,6 +68,7 @@ describe("FiveBidsAndAsksWithinFivePercent", () => {
     describe('skip strategy', () => {
       it("skip because invalid orderBook", () => {
         const orderBook = { bids: [], asks: [] };
+        orderRepo.findAllByExample = jest.fn().mockImplementation(() => [])
         const result = subject.execute(orderBook);
         expect(result).toBeFalsy();
       });
@@ -75,6 +78,7 @@ describe("FiveBidsAndAsksWithinFivePercent", () => {
           ETH: 0,
           USD: INITIAL_USD_BALANCE,
         }));
+        orderRepo.findAllByExample = jest.fn().mockImplementation(() => [])
         const bid: [number, number, number] = [50000, 350, 1];
         const ask: [number, number, number] = [50000, 350, -1];
         const orderBook = {

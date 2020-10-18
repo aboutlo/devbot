@@ -155,7 +155,7 @@ export class BotService {
       (memo: OrderBook, [id, price, amount]: number[]) => {
         return {
           bids:
-            amount > 0 ? memo.bids.concat([[id, price, amount]]) : memo.bids,
+            amount > 0 ? [[id, price, amount]].concat(memo.bids) : memo.bids,
           asks:
             amount < 0 ? memo.asks.concat([[id, price, amount]]) : memo.asks,
         };

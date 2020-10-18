@@ -167,10 +167,10 @@ describe("BotService", () => {
       expect(status).toEqual({
         bestBid: 366.84,
         bestAsk: 366.98,
-        nearestBid: { type: "BID", price: 346.972155725 },
-        bids: "346.972155725, 356.972155725, 376.972155725",
+        nearestBid: { type: "BID", price: 376.972155725 },
+        botBids: "376.972155725, 356.972155725, 346.972155725",
         nearestAsk: { type: "ASK", price: 346.172155725 },
-        asks: "346.172155725, 376.972155725, 386.972155725",
+        botAsks: "346.172155725, 376.972155725, 386.972155725",
       });
     });
   });
