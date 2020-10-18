@@ -163,7 +163,7 @@ describe("BotService", () => {
       const bestBid = orderBook.bids[orderBook.bids.length - 1]; // last element
       const [bestAsk] = orderBook.asks; // fist element
 
-      const status = subject.getStatus(bestBid, bestAsk);
+      const status = subject.printStatus(bestBid, bestAsk);
       expect(status).toEqual({
         bestBid: 366.84,
         bestAsk: 366.98,

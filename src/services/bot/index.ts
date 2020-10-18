@@ -52,9 +52,11 @@ export class BotService {
         const bestBid = bids[bids.length - 1]; // last element
         const [bestAsk] = asks; // fist element
 
-        this.strategy.execute({ bids, asks });
-        const status = this.getStatus(bestBid, bestAsk);
         const filledOrders = this.matchOrders(bestBid, bestAsk);
+        const status = this.printStatus(bestBid, bestAsk);
+        this.strategy.execute({ bids, asks });
+
+        console.log('status:')
         console.log({
           ...status,
           filledOrders: filledOrders.length,
@@ -70,8 +72,8 @@ export class BotService {
     }
   }
 
-  // cosmetic shouldn't be done in the tick
-  getStatus(
+  // Cosmetic shouldn't be done in the tick
+  printStatus(
     bestBid: [number, number, number],
     bestAsk: [number, number, number]
   ) {
@@ -85,7 +87,7 @@ export class BotService {
     });
 
     const sortBidsOpenOrders = [...bidsOpenOrders].sort(
-      (a: IOrder, b: IOrder) => a.price - b.price
+      (a: IOrder, b: IOrder) => b.price - a.price
     );
     const sortAsksOpenOrders = [...aksOpenOrders].sort(
       (a: IOrder, b: IOrder) => a.price - b.price
@@ -97,15 +99,13 @@ export class BotService {
       bestBid: bestBid[1],
       bestAsk: bestAsk[1],
       nearestBid: {
-        type: nearestBid.type,
-        price: nearestBid.price,
-        // amount: nearestBid.amount,
+        type: nearestBid?.type,
+        price: nearestBid?.price,
       },
       botBids: sortBidsOpenOrders.map((o) => o.price).join(", "),
       nearestAsk: {
         type: nearestAsk?.type,
         price: nearestAsk?.price,
-        // amount: nearestAsk.amount,
       },
       botAsks: sortAsksOpenOrders.map((o) => o.price).join(", "),
     };
@@ -116,13 +116,13 @@ export class BotService {
     bestAsk: [number, number, number]
   ) {
     console.log("matching...");
-    const bestBidPrice = bestBid[1]
-    const bestAskPrice = bestAsk[1]
+    const bestBidPrice = bestBid[1];
+    const bestAskPrice = bestAsk[1];
 
     const filledBids = this.orderRepo
       .findAllByExample({ type: OrderType.Bid })
       .filter(
-        (o: IOrder) => o.price > bestBidPrice  && o.status === OrderStatus.Open
+        (o: IOrder) => o.price > bestBidPrice && o.status === OrderStatus.Open
       );
     const filledAsks = this.orderRepo
       .findAllByExample({ type: OrderType.Ask })
